@@ -42,6 +42,14 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+# Database
+DATABASES = {
+    'default': env.db(
+        'DATABASE_URL',
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'
+        )
+}
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
