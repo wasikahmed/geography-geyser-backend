@@ -13,7 +13,8 @@ from .serializers import (
     UserRegistrationSerializer, 
     CustomTokenObtainPairSerializer, 
     UserProfileSerializer, 
-    PasswordResetRequestSerializer
+    PasswordResetRequestSerializer,
+    VerifyEmailSerializer
 )
 from .models import OneTimePassword
 
@@ -28,13 +29,30 @@ class RegistrationView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            send_verification_email(user, request)
+            # send the OTP email instead of the link
+            send_verification_email(user)
+
             return Response({
                 'message': "User registered successfully. Please check your email to verify your account.",
                 'user': serializer.data
             }, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyEmailView(generics.GenericAPIView):
+    serializer_class = VerifyEmailSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {'message': 'Email verified successfully. You can now log in.'},
+            status=status.HTTP_200_OK
+        )
+
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -48,37 +66,6 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
-
-class VerifyEmailView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request: Request):
-        token = request.GET.get('token')
-
-        if not token:
-            return Response({'error': 'Token is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Cleanup token from potential terminal copy-paste issues
-        if '3D' in token or '\n' in token:
-             token = token.replace('=3D', '').replace('=', '').replace('\n', '')
-
-        try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            user_id = payload['user_id']
-            user = User.objects.get(id=user_id)
-
-            if not user.is_active:
-                user.is_active = True
-                user.save()
-                return Response({'message': 'Email successfully verified! You can now log in.'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'message': 'Email already verified.'}, status=status.HTTP_200_OK)
-        except jwt.ExpiredSignatureError:
-            return Response({'error': 'Activation link expired'}, status=status.HTTP_400_BAD_REQUEST)
-        except jwt.DecodeError:
-            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer

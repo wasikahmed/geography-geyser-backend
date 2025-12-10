@@ -55,6 +55,44 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'role', 'date_joined', 'last_login']
 
 
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=5)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        otp = attrs.get('otp')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise AuthenticationFailed('User not found')
+        
+        try:
+            user_otp = OneTimePassword.objects.get(user=user)
+        except OneTimePassword.DoesNotExist:
+            raise AuthenticationFailed('Invalid OTP or expired')
+        
+        if user_otp.otp != otp:
+            raise AuthenticationFailed('Invalid OTP')
+        
+        attrs['user'] = user
+        attrs['otp_obj'] = user_otp
+        return attrs
+    
+    def save(self):
+        user = self.validated_data['user']
+        otp_obj = self.validated_data['otp_obj']
+
+        if not user.is_active:
+            user.is_active = True
+            user.save()
+
+        # delete the otp after successful verification
+        otp_obj.delete()
+
+        return user
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 

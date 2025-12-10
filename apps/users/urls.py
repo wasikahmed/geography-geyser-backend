@@ -19,10 +19,9 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='profile'),
     
     # Email Verification
-    # CHANGED BACK: No <str:token> here. It will use ?token=...
     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     
-    # Password Reset (OTP Flow - Kept as per your requirement)
+    # Password Reset
     path('password-reset-request/', PasswordResetRequestView.as_view(), name='password-reset-request'),
     path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
 ]
