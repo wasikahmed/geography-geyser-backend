@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
+from django.contrib.auth.models import update_last_login
 
 from .utils import send_otp_via_email
 from .models import OneTimePassword
@@ -12,6 +13,8 @@ User = get_user_model()
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True, min_length=8)
+
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -34,10 +37,42 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return user
+
+class AdminRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'password', 'confirm_password', 'full_name', 'phone_number', 'role']
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError({'password': 'Passwords do not match.'})
+        return data
     
+    def create(self, validated_data):
+        validated_data.pop('confirm_password', None)
+        password = validated_data.pop('password')
+
+        email = validated_data.pop('email')
+
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            role='admin',
+            is_active=True,
+            is_staff=True,
+            **validated_data
+        )
+        return user
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
+
+        # trigger the update_last_login signal
+        update_last_login(None, self.user)
         
         # Add extra data to the response
         data['user'] = {

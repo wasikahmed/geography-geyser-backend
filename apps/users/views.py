@@ -10,7 +10,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .utils import send_otp_via_email, send_verification_email
 from .serializers import (
     SetNewPasswordSerializer, 
-    UserRegistrationSerializer, 
+    UserRegistrationSerializer,
+    AdminRegistrationSerializer, 
     CustomTokenObtainPairSerializer, 
     UserProfileSerializer, 
     PasswordResetRequestSerializer,
@@ -37,6 +38,21 @@ class RegistrationView(generics.CreateAPIView):
                 'user': serializer.data
             }, status=status.HTTP_201_CREATED)
         
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminRegistrationView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = AdminRegistrationSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Admin user created successfully.',
+                'user': serializer.data
+                }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyEmailView(generics.GenericAPIView):
