@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
-from django.contrib.auth.models import update_last_login
+from django.contrib.auth.models import Group, update_last_login
 
 from .utils import send_otp_via_email
 from .models import OneTimePassword
@@ -13,8 +13,6 @@ User = get_user_model()
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True, min_length=8)
-
-    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -36,6 +34,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             is_active=False, 
             **validated_data
         )
+
+        student_group, _ = Group.objects.get_or_create(name='Student')
+        user.groups.add(student_group)
+
         return user
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
@@ -44,7 +46,7 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'confirm_password', 'full_name', 'phone_number', 'role']
+        fields = ['id', 'email', 'password', 'confirm_password', 'full_name', 'phone_number']
 
     def validate(self, data):
         if data['password'] != data['confirm_password']:
@@ -60,34 +62,49 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             email=email,
             password=password,
-            role='admin',
             is_active=True,
             is_staff=True,
             **validated_data
         )
+
+        admin_group, _ = Group.objects.get_or_create(name='Admin')
+        user.groups.add(admin_group)
+
         return user
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-
+        
         # trigger the update_last_login signal
         update_last_login(None, self.user)
         
+        role = 'Student' # default fallback
+        # get the first group name to use as the role, handles cases where a user might be in multiple groups or none
+        if self.user.groups.exists():
+            role = self.user.groups.first().name
+
         # Add extra data to the response
         data['user'] = {
             'id': self.user.id,
             'email': self.user.email,
             'full_name': self.user.full_name,
-            'role': self.user.role
+            'role': role
         }
         return data
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'email', 'role', 'full_name', 'phone_number', 'date_joined', 'last_login']
         read_only_fields = ['id', 'email', 'role', 'date_joined', 'last_login']
+
+    def get_role(self, obj):
+        if obj.groups.exists():
+            return obj.groups.first().name
+        return 'Student'
 
 
 class VerifyEmailSerializer(serializers.Serializer):

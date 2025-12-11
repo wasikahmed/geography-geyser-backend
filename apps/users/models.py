@@ -31,12 +31,6 @@ class User(AbstractUser):
     full_name = models.CharField('full name', max_length=255, blank=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
-    ROLE_CHOICES = (
-        ('admin', 'admin'),
-        ('student', 'Student'),
-    )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
-
     USERNAME_FIELD = 'email' 
     REQUIRED_FIELDS = []
 
