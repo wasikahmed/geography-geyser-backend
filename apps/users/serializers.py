@@ -1,3 +1,5 @@
+from django.utils import timezone
+from datetime import timedelta
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
@@ -125,6 +127,11 @@ class VerifyEmailSerializer(serializers.Serializer):
         except OneTimePassword.DoesNotExist:
             raise AuthenticationFailed('Invalid OTP or expired')
         
+        # check if OTP is expired
+        if user_otp.created_at < timezone.now() - timedelta(minutes=5):
+            user_otp.delete() # auto-remove expired OTP
+            raise AuthenticationFailed('OTP has expired. Please request a new one.')
+
         if user_otp.otp != otp:
             raise AuthenticationFailed('Invalid OTP')
         
@@ -144,6 +151,22 @@ class VerifyEmailSerializer(serializers.Serializer):
         otp_obj.delete()
 
         return user
+
+class ResendActivationEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exists.")
+        
+        if user.is_active:
+            raise serializers.ValidationError("This account is already active.")
+        
+        attrs['user'] = user
+        return attrs
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()

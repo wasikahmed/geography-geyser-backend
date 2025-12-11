@@ -6,8 +6,9 @@ from .views import (
     CustomTokenRefreshView,
     UserProfileView,
     VerifyEmailView,
+    ResendActivationEmailView,
     PasswordResetRequestView,
-    PasswordResetConfirmView
+    PasswordResetConfirmView,
 )
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     
     # Email Verification
     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
+    path('resend-activation-code/', ResendActivationEmailView.as_view(), name='resend-activation-code'),
     
     # Password Reset
     path('password-reset-request/', PasswordResetRequestView.as_view(), name='password-reset-request'),

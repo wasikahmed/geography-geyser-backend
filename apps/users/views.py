@@ -15,7 +15,8 @@ from .serializers import (
     CustomTokenObtainPairSerializer, 
     UserProfileSerializer, 
     PasswordResetRequestSerializer,
-    VerifyEmailSerializer
+    VerifyEmailSerializer,
+    ResendActivationEmailSerializer,
 )
 from .models import OneTimePassword
 
@@ -69,6 +70,21 @@ class VerifyEmailView(generics.GenericAPIView):
             status=status.HTTP_200_OK
         )
 
+class ResendActivationEmailView(generics.GenericAPIView):
+    serializer_class = ResendActivationEmailSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        send_verification_email(user)
+
+        return Response(
+            {'message': 'A new verification code has been sent to your email.'},
+            status=status.HTTP_200_OK
+        )
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
