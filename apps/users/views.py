@@ -6,6 +6,9 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
 
 from .utils import send_otp_via_email, send_verification_email
 from .serializers import (
@@ -90,7 +93,28 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 class CustomTokenRefreshView(TokenRefreshView):
-    pass 
+    pass
+
+class GoogleAuthClient(OAuth2Client):
+    def __init__(self, request, consumer_key, consumer_secret, access_token_method, access_token_url, callback_url, scope, scope_delimiter, headers, basic_auth):
+        # django-allauth (new version) removed 'scope' and 'scope_delimiter' from __init__
+        # but dj-rest-auth (older wrapper) still sends them.
+        # We accept them in args to prevent a crash, but we DO NOT pass them to super().
+        super().__init__(
+            request=request,
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token_method=access_token_method,
+            access_token_url=access_token_url,
+            callback_url=callback_url,
+            headers=headers,
+            basic_auth=basic_auth
+        )
+
+class GoogleLoginView(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    client_class = GoogleAuthClient
+    callback_url = "http://localhost:3000"
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer

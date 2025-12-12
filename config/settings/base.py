@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
 # Application definition
 INSTALLED_APPS = [
+    # django default apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -22,13 +23,49 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django.contrib.sites',
+
     # local apps
     'users',
 
     # third party
     'rest_framework',
     'rest_framework_simplejwt',
+
+
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
+
+# Site ID is required by django-allauth
+SITE_ID = 1
+
+# Provider Config
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'VERIFIED_EMAIL': True,
+    }
+}
+
+# Tell dj-rest-auth to use your existing JWT setup
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'my-app-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'my-app-refresh-token',
+    # This prevents it from trying to use the standard token model
+    'TOKEN_MODEL': None, 
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -37,6 +74,9 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'allauth.account.middleware.AccountMiddleware', 
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -111,3 +151,39 @@ REST_FRAMEWORK = {
     # ),
     # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+# ALLAUTH CONFIGURATION
+# ------------------------------------------------------------------------------
+# Tell allauth that we don't use a username field
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None 
+
+# Tell allauth that email is required and unique
+# ACCOUNT_EMAIL_REQUIRED = True 
+
+
+# Tell allauth that username is NOT required
+# ACCOUNT_USERNAME_REQUIRED = False 
+
+# Tell allauth to authenticate using email
+# ACCOUNT_AUTHENTICATION_METHOD = 'email' 
+
+# Optional: Avoids sending a verification email immediately on social login 
+# (since Google/Social emails are usually already verified)
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+
+# NEW SETTINGS (Add these)
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+# 1. Replace ACCOUNT_AUTHENTICATION_METHOD with this:
+ACCOUNT_LOGIN_METHODS = {'email'}
+
+# 2. Replace ACCOUNT_EMAIL_REQUIRED and ACCOUNT_USERNAME_REQUIRED with this:
+# This list defines the fields required during signup. 
+# 'email*' means email is required.
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'full_name', 'phone_number'] 
+# (Note: You can adjust the list above based on what fields you actually want in the signup form)
+
+
+# Use BigAutoField as the default primary key field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
