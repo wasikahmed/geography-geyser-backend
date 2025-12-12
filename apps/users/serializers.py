@@ -16,11 +16,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True, min_length=8)
 
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+
     class Meta:
         model = User
         # SECURITY: Removed 'role' from fields to prevent users from registering as admins
-        fields = ['id', 'email', 'password', 'confirm_password', 'full_name', 'phone_number']    
-    
+        fields = ['id', 'email', 'first_name', 'last_name', 'password', 'confirm_password', 'phone_number']    
+
     def validate(self, data):
         if data['password'] != data['confirm_password']:
             raise serializers.ValidationError({'password': 'Passwords do not match.'})
@@ -46,9 +49,12 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True, min_length=8)
 
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'confirm_password', 'full_name', 'phone_number']
+        fields = ['id', 'email', 'first_name', 'last_name', 'password', 'confirm_password', 'phone_number']
 
     def validate(self, data):
         if data['password'] != data['confirm_password']:
@@ -90,7 +96,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['user'] = {
             'id': self.user.id,
             'email': self.user.email,
-            'full_name': self.user.full_name,
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name,
             'role': role
         }
         return data
@@ -100,7 +107,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'role', 'full_name', 'phone_number', 'date_joined', 'last_login']
+        fields = ['id', 'email', 'role', 'first_name', 'last_name', 'phone_number', 'date_joined', 'last_login']
         read_only_fields = ['id', 'email', 'role', 'date_joined', 'last_login']
 
     def get_role(self, obj):

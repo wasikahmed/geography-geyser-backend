@@ -181,7 +181,7 @@ ACCOUNT_LOGIN_METHODS = {'email'}
 # 2. Replace ACCOUNT_EMAIL_REQUIRED and ACCOUNT_USERNAME_REQUIRED with this:
 # This list defines the fields required during signup. 
 # 'email*' means email is required.
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'full_name', 'phone_number'] 
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'first_name', 'last_name', 'phone_number'] 
 # (Note: You can adjust the list above based on what fields you actually want in the signup form)
 
 

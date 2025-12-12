@@ -28,7 +28,9 @@ class User(AbstractUser):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField('email address', unique=True)
-    full_name = models.CharField('full name', max_length=255, blank=True)
+    first_name = models.CharField('first name', max_length=255, blank=True)
+    last_name = models.CharField('last name', max_length=255, blank=True)
+
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
     USERNAME_FIELD = 'email' 
@@ -36,6 +38,10 @@ class User(AbstractUser):
 
     objects = CustomUserManager()
     
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
     def __str__(self):
         return self.email
 

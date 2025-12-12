@@ -35,16 +35,22 @@ def populate_profile(request, user, **kwargs):
         # Google returns useful data in extra_data
         data = sociallogin.account.extra_data
         
-        # Try to get the 'name' field (e.g., "Wasik Ahmed")
-        google_name = data.get('name')
+        
+        # get first name (given_name) and last name (family_name)
+        first_name = data.get('given_name', '')
+        last_name = data.get('family_name', '')
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
         
         # If 'name' is missing, try combining given_name + family_name
-        if not google_name:
-            given_name = data.get('given_name', '')
-            family_name = data.get('family_name', '')
-            google_name = f"{given_name} {family_name}".strip()
+        # if not google_name:
+        #     given_name = data.get('given_name', '')
+        #     family_name = data.get('family_name', '')
+        #     google_name = f"{given_name} {family_name}".strip()
 
-        # Save it to your custom User model
-        if google_name:
-            user.full_name = google_name
-            user.save()
+        # # Save it to your custom User model
+        # if google_name:
+        #     user.full_name = google_name
+        #     user.save()
