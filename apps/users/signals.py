@@ -1,3 +1,5 @@
+import requests
+from django.core.files.base import ContentFile
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
@@ -18,11 +20,6 @@ def assign_group_to_superuser(sender, instance, created, **kwargs):
 
 @receiver(user_signed_up)
 def populate_profile(request, user, **kwargs):
-    """
-    Used for Social Auth (Google) signals.
-    1. Assign 'Student' group to new social users.
-    2. Extract 'full_name' from Google profile.
-    """
     # Assign Role (Group)
     student_group, _ = Group.objects.get_or_create(name='Student')
     user.groups.add(student_group)
@@ -35,13 +32,31 @@ def populate_profile(request, user, **kwargs):
         # Google returns useful data in extra_data
         data = sociallogin.account.extra_data
         
-        
         # get first name (given_name) and last name (family_name)
         first_name = data.get('given_name', '')
         last_name = data.get('family_name', '')
-
         user.first_name = first_name
         user.last_name = last_name
+
+        # get profile image
+        picture_url = data.get('picture')
+
+        # only download if the user doesn't already have an image and a URL exists
+        if picture_url and not user.profile_image:
+            try:
+                response = requests.get(picture_url)
+                if response.status_code == 200:
+                    file_name = f"profile_{user.id}.jpg"
+
+                    # save the image to the field (uploads to cloudinary automatically)
+                    user.profile_image.save(
+                        file_name,
+                        ContentFile(response.content),
+                        save=False # save explicitly at the end
+                    )
+            except Exception as e:
+                print(f"Failed to download google profile image: {e}")
+
         user.save()
         
         # If 'name' is missing, try combining given_name + family_name

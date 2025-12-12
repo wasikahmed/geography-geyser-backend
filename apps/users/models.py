@@ -30,8 +30,8 @@ class User(AbstractUser):
     email = models.EmailField('email address', unique=True)
     first_name = models.CharField('first name', max_length=255, blank=True)
     last_name = models.CharField('last name', max_length=255, blank=True)
-
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
 
     USERNAME_FIELD = 'email' 
     REQUIRED_FIELDS = []

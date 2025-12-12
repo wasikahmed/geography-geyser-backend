@@ -19,10 +19,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
 
+    profile_image = serializers.ImageField(required=False)
+
     class Meta:
         model = User
         # SECURITY: Removed 'role' from fields to prevent users from registering as admins
-        fields = ['id', 'email', 'first_name', 'last_name', 'password', 'confirm_password', 'phone_number']    
+        fields = ['id', 'email', 'first_name', 'last_name',
+                  'password', 'confirm_password', 'phone_number',
+                  'profile_image']    
 
     def validate(self, data):
         if data['password'] != data['confirm_password']:
@@ -104,10 +108,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
+    
+    profile_image = serializers.ImageField(read_only=False)
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'role', 'first_name', 'last_name', 'phone_number', 'date_joined', 'last_login']
+        fields = ['id', 'email', 'role', 'first_name', 'last_name', 'phone_number', 'profile_image', 'date_joined', 'last_login']
         read_only_fields = ['id', 'email', 'role', 'date_joined', 'last_login']
 
     def get_role(self, obj):
