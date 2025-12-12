@@ -28,7 +28,7 @@ def send_verification_email(user):
 
 def send_otp_via_email(email):
     subject = "Your Account Verification Code"
-    otp_code = str(random.randint(100000, 999999)) 
+    otp_code = str(random.randint(10000, 99999)) 
     
     user = User.objects.get(email=email)
     

@@ -23,16 +23,11 @@ def populate_profile(request, user, **kwargs):
     1. Assign 'Student' group to new social users.
     2. Extract 'full_name' from Google profile.
     """
-    # -----------------------------------------------------------
-    # 1. Assign Role (Group)
-    # -----------------------------------------------------------
-    # We use get_or_create to be safe, just like in your serializers
+    # Assign Role (Group)
     student_group, _ = Group.objects.get_or_create(name='Student')
     user.groups.add(student_group)
 
-    # -----------------------------------------------------------
-    # 2. Extract Name from Google
-    # -----------------------------------------------------------
+    # Extract Name from Google
     # The signal passes a 'sociallogin' object in kwargs
     sociallogin = kwargs.get('sociallogin')
     
